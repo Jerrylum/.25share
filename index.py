@@ -17,6 +17,9 @@ RED = '[31m'
 GREEN = '[32m'
 RESET = '[0m'
 
+PONG_FLAG = bytes([3])
+COPY_FLAG = bytes([4])
+
 usingSocket = None
 latestClient = None
 
@@ -29,37 +32,35 @@ serverRSAKey = RSA.importKey(serverPrivatePem)
 serverCipher = Cipher_pkcs1_v1_5.new(serverRSAKey)
 
 serverPublicPem = server_rsa.publickey().exportKey()
-serverPublicPemWithoutHeader = ''.join(serverPublicPem.decode().split('\n')[1:-1]) # always base64 encoded
-serverFirstRSAPublicKeySendOutMessage = bytearray('rsa<' + serverPublicPemWithoutHeader, 'utf8')
+serverPublicPemWithoutHeader = ''.join(serverPublicPem.decode().split('\n')[
+                                       1:-1])  # always base64 encoded
+serverFirstRSAPublicKeySendOutMessage = bytearray(
+    serverPublicPemWithoutHeader, 'utf8')
+
 
 class Client():
     def __init__(self, conn):
         self.conn = conn
-    
+
     def getAESKey(self):
         encrypted_data = self.conn.recv(2048)
         if not encrypted_data:
             raise Exception('0')
 
-        data = serverCipher.decrypt(encrypted_data, 123)
+        data = serverCipher.decrypt(encrypted_data, [])
 
-        result = data.decode().split('>')
+        self.shareKey = data[0:32]
+        self.shareIv = data[32:48]
 
-        msg_type = result[0]
-        msg = result[1]
-
-        if (msg_type == 'aeskey'):
-            self.shareKey = base64.decodebytes(msg.encode())
-        
-            print('Share AES Key:', self.shareKey.hex()) # TODO remove this and make a better print
-        
+        # TODO remove this and make a better print
+        print('Share AES Key:', self.shareKey.hex())
 
     def recvMessage(self):
         encrypted_data = self.conn.recv(2048)
         if not encrypted_data:
             raise Exception('0')
-    
-        shareCipher = AES.new(self.shareKey, AES.MODE_CFB, bytes('ABCDEFGHIJKLMNOP', 'ascii'), segment_size=128)
+
+        shareCipher = self._getCipher()
         data = shareCipher.decrypt(encrypted_data)
 
         return data
@@ -67,14 +68,22 @@ class Client():
     def sendServerPublicKey(self):
         self._send(serverFirstRSAPublicKeySendOutMessage)
 
-    def sendMessage(self, msg):
-        shareCipher = AES.new(self.shareKey, AES.MODE_CFB, bytes('ABCDEFGHIJKLMNOP', 'ascii'), segment_size=128)
-        encrypted_data = shareCipher.encrypt(bytearray(msg, 'utf8'))
+    def sendMessage(self, binary):
+        shareCipher = self._getCipher()
+        encrypted_data = shareCipher.encrypt(binary)
 
         self._send(encrypted_data)
 
     def _send(self, send):
-        self.conn.sendall(b''.join([len(send).to_bytes(2, sys.byteorder), send]))
+        package_len = len(send).to_bytes(2, sys.byteorder)
+        self.conn.sendall(joinBinaryArray(package_len, send))
+
+    def _getCipher(self):
+        return AES.new(self.shareKey, AES.MODE_CFB, self.shareIv, segment_size=128)
+
+
+def joinBinaryArray(*args):
+    return b''.join(args)
 
 
 def on_new_client(conn, addr):
@@ -82,32 +91,35 @@ def on_new_client(conn, addr):
 
     print(GREEN + 'Connected by', addr, RESET)
 
-    thisClient = Client(conn)
+    try:
+        thisClient = Client(conn)
 
-    ##############
+        ##############
 
-    thisClient.sendServerPublicKey()
-    thisClient.getAESKey()
+        thisClient.sendServerPublicKey()
+        thisClient.getAESKey()
 
-    ##############
+        ##############
 
-    while True:
-        latestClient = thisClient
+        while True:
+            latestClient = thisClient
 
-        result = thisClient.recvMessage().decode().split('>')
+            result = thisClient.recvMessage()
 
-        msg_type = result[0]
-        msg = result[1]
+            msgid = result[0:4]
+            msg = result[4::1].decode()
 
-        msgid = msg_type
+            print('#' + msgid.hex(), msg)
+            # TODO handle the message
 
-        print('#' + msgid[0:6], msg)
-        # TODO handle the message
-
-        thisClient.sendMessage('pong<' + msgid)
+            thisClient.sendMessage(joinBinaryArray(PONG_FLAG, msgid))
+    except Exception as e:
+        print(RED + 'Disconnected by', addr, RESET)
+        print(e)
+        pass
 
     conn.close()
-    print(RED + 'Disconnected by', addr, RESET)
+    print(RED + 'Closed', addr, RESET)
 
 
 def server_thread():
@@ -128,7 +140,8 @@ if __name__ == '__main__':
         while True:
             answer = input()
             if (latestClient != None):
-                latestClient.sendMessage('copy<' + answer)
+                latestClient.sendMessage(joinBinaryArray(
+                    COPY_FLAG, bytearray(answer, 'utf8')))
                 print(GREEN + 'Sent', RESET)
     except KeyboardInterrupt:
         print('Keyboard Inerrupt, Exit')
