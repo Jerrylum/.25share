@@ -8,7 +8,7 @@ This project is divided into two parts, server (this repository) and mobile appl
 (<a href="https://github.com/jerrylum/.25share-android">here</a>). Pay a visit to our wiki page for more information about setup and usage.
 </p>
 
-<h4 align="center"><a href="https://github.com/jerrylum/topmost2/releases">Setup Now</a></h4>
+<h4 align="center"><a href="https://github.com/jerrylum/.25share/wiki">Setup Now</a></h4>
 
 ---
 
