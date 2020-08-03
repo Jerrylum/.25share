@@ -371,7 +371,7 @@ def clientThread(server, conn, addr):
             thisClient.sendMessage(joinBinaryArray(PONG_FLAG, msgid))
     except Exception as e:
         print(RED + 'Disconnected by', addr[0], RESET)
-        print(e)
+        #print(e)
         pass
 
     conn.close()
@@ -430,6 +430,9 @@ FLAG
              - Otherwise, will execute the `xdotool type` command with worse
                performance.
              - paste once as a time. 
+
+    You can use multiple flags at the same time.
+    e.g. `t`, `s1`, `ps1` and `ps1s2t` are acceptable
     
 """, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
