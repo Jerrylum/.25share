@@ -277,68 +277,53 @@ def joinBinaryArray(*args):
     return b''.join(args)
 
 
-def getLocalNetworkIp():
-    # https://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # doesn't even have to be reachable
-        s.connect(('10.255.255.255', 1))
-        IP = s.getsockname()[0]
-    except Exception:
-        IP = '127.0.0.1'
-    finally:
-        s.close()
-    return IP
-
-
-def showWelcomeMessage(server, client):
-    display = [client.securityCode[i:i+4]
-               for i in range(0, len(client.securityCode), 4)]
-    print('Security Code:')
-    print(YELLOW + ('%s %s %s %s\n%s %s %s %s\n' % tuple(display)) + RESET)
-    print('To ensure your messages are secured, please verify that the security code\n' +
-          'displayed on the screen is exactly the same as the one displayed on the client.\n')
-
-    if not client.allowed:
-        print('Use command' + BLUE + ' .allow ' + client.id +
-              RESET + ' to allow the client to send messages\n')
-
-
-def handleMessage(server, client, msg):
-    if server.flags['print']:
-        print(BLUE + '#' + client.id + '>' + RESET, msg)
-
-    cmd = ''
-
-    if server.flags['selection1']:
-        cmd += 'echo -n "$c" | xclip -sel p;'
-
-    if server.flags['selection2']:
-        cmd += 'echo -n "$c" | xclip -sel s;'
-
-    if server.flags['selection3']:
-        cmd += 'echo -n "$c" | xclip -sel c;'
-
-    if server.flags['typing']:
-        if server.flags['selection3']:
-            cmd += 'xdotool key shift+0xff63;'
-        elif server.flags['selection1']:
-            cmd += 'xdotool click --clearmodifiers 2;'
-        else:
-            cmd += 'echo -n "$c" | xdotool type --file -;'
-
-    if cmd != '':
-        prefix = 'c="%s";' % msg.replace('\\', '\\\\\\\\')\
-                                .replace('"', '\\"')\
-                                .replace('$', '\\$')
-        os.system(prefix + cmd)
-
-
 ###############################################################################
 ###############################################################################
 
 
 def clientThread(server, conn, addr):
+
+    def showWelcomeMessage(server, client):
+        display = [client.securityCode[i:i+4]
+                for i in range(0, len(client.securityCode), 4)]
+        print('Security Code:')
+        print(YELLOW + ('%s %s %s %s\n%s %s %s %s\n' % tuple(display)) + RESET)
+        print('To ensure your messages are secured, please verify that the security code\n' +
+            'displayed on the screen is exactly the same as the one displayed on the client.\n')
+
+        if not client.allowed:
+            print('Use command' + BLUE + ' .allow ' + client.id +
+                RESET + ' to allow the client to send messages\n')
+
+    def handleMessage(server, client, msg):
+        if server.flags['print']:
+            print(BLUE + '#' + client.id + '>' + RESET, msg)
+
+        cmd = ''
+
+        if server.flags['selection1']:
+            cmd += 'echo -n "$c" | xclip -sel p;'
+
+        if server.flags['selection2']:
+            cmd += 'echo -n "$c" | xclip -sel s;'
+
+        if server.flags['selection3']:
+            cmd += 'echo -n "$c" | xclip -sel c;'
+
+        if server.flags['typing']:
+            if server.flags['selection3']:
+                cmd += 'xdotool key shift+0xff63;'
+            elif server.flags['selection1']:
+                cmd += 'xdotool click --clearmodifiers 2;'
+            else:
+                cmd += 'echo -n "$c" | xdotool type --file -;'
+
+        if cmd != '':
+            prefix = 'c="%s";' % msg.replace('\\', '\\\\\\\\')\
+                                    .replace('"', '\\"')\
+                                    .replace('$', '\\$')
+            os.system(prefix + cmd)
+
     print(GREEN + '\nConnected by', addr[0], RESET)
 
     try:
@@ -368,9 +353,8 @@ def clientThread(server, conn, addr):
             handleMessage(server, thisClient, msg)
 
             thisClient.sendMessage(joinBinaryArray(PONG_FLAG, msgid))
-    except Exception as e:
+    except Exception:
         print(RED + 'Disconnected by', addr[0], RESET)
-        #print(e)
         pass
 
     conn.close()
@@ -380,6 +364,20 @@ def clientThread(server, conn, addr):
 
 def serverThread():
     global usingServer
+
+
+    def getLocalNetworkIp():
+        # https://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            # doesn't even have to be reachable
+            s.connect(('10.255.255.255', 1))
+            IP = s.getsockname()[0]
+        except Exception:
+            IP = '127.0.0.1'
+        finally:
+            s.close()
+        return IP
 
     try:
         usingServer = Server(HOST, PORT)
