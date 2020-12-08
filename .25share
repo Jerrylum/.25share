@@ -220,11 +220,11 @@ NOTE
                 raise TypeError('None')
             fnc(c, arg)
 
-    if raw.startswith('.'):
-        split = raw.split(' ')
+    try:
+        if raw.startswith('.'):
+            split = raw.split(' ')
 
-        cmd = split[0][1::1]
-        try:
+            cmd = split[0][1::1]
             if cmd == 'help':
                 showHelp()
             elif cmd == 'flag':
@@ -246,15 +246,14 @@ NOTE
             else:
                 print(RED + 'Unknown command', RESET)
                 showHelp()
-        except TypeError:
-            print(RED + 'Client not found', RESET)
-        except Exception:
-            print(RED + 'Command exception', RESET)
-            # print(e)
-            showHelp()
+        else:
+            clientSelectorHandler('@p', sendMessage, (raw,))
+    except TypeError:
+        print(RED + 'Client not found', RESET)
+    except Exception:
+        print(RED + 'Command exception', RESET)
+        showHelp()
 
-    else:
-        clientSelectorHandler('@p', sendMessage, (raw,))
 
     print(RESET)  # Important
 
