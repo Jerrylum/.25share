@@ -4,8 +4,9 @@
 <h3 align="center">QuarterShare</h3>
 <p align="center">
 Quarter Share is made to enable easy message communication between mobile phones and computers. <br><br>
-This project is divided into two parts, server (this repository) and mobile application
-(<a href="https://github.com/jerrylum/.25share-android">here</a>). Pay a visit to our wiki page for more information about setup and usage.
+This project is divided into three parts, Linux server (this repository) , Windows server
+(<a href="https://github.com/jerrylum/.25share-windows">link</a>) and Android application
+(<a href="https://github.com/jerrylum/.25share-android">link</a>). Pay a visit to our wiki page for more information about setup and usage.
 </p>
 
 <h4 align="center"><a href="https://github.com/jerrylum/.25share/wiki">Setup Now</a></h4>
@@ -19,7 +20,6 @@ Click the connect button. Then type something on your phone and send it.
 <h5 align="left">
 <img src="https://i.imgur.com/SAdyYWm.gif">
 </h5>
-
 <br>
 
 ### Is it dangerous?
@@ -56,7 +56,11 @@ Sure! You can control how the server handles your messages using internal comman
 
 ---
 
-### Wait! I am using Windows and/or iPhone!
+### Wait! I am using Windows!
+
+Use .25Share Windows server [.25Share](https://github.com/Jerrylum/.25share-windows). 
+
+### Wait! I am using iPhone!
 
 You can check out [One Share](https://github.com/Jerrylum/OneShare). 
 
@@ -122,7 +126,7 @@ optional arguments:
 .send <client> <content>         send a message to client(s)
 .stop                            stop the server
 ```
-    
+
 #### Client Selector
 ```
 @a      all clients
@@ -132,7 +136,7 @@ optional arguments:
 
 For example, using `.kick @a` command will kick all connected clients, using `.kick 30` command will kick a connected client with id **30**.
 
-    
+
 #### Note
 1. Commands must be preceded by a period.
 2. Any input that does not start with a period is understood as sending
